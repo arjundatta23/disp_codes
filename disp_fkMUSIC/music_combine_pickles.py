@@ -67,6 +67,8 @@ for j,jarname in enumerate(jarlist):
 		setv=[cookie1,cookie2]
 		print "Numrows is %d" %(nrows)
 	else:
+		print cookie1, setv[0]
+		print cookie2, setv[1]
 		if (cookie1!=setv[0] or cookie2!=setv[1]):
 			sys.exit('Stored pickles are inconsistent !')
 	try:

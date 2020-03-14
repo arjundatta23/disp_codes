@@ -15,6 +15,8 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
+sys.path.append('../modules_common')
+
 # Modules written by me
 import seisarray_data as sad
 import music_algorithm as ma
@@ -76,16 +78,16 @@ def plot_spectrum(showimage,imtype,seeth):
 			else:
 				legcols=1
 				legsp=1
-			ax.legend(loc=1,ncol=legcols,labelspacing=legsp)
+			#ax.legend(loc=1,ncol=legcols,labelspacing=legsp)
 		ax.set_xlim(freqs_final[0],freqs_final[-1])
 		#ax.set_xlim(0.02,freqs_final[-1])
 		#ax.set_title('%.2f km, param = %d' %(aperture,nmodes))
 		ax.set_title('Aperture %d km' %(aperture))
-		if legcols>1:
-			leg = plt.gca().get_legend()
-        	        ltext  = leg.get_texts()
+		#if legcols>1:
+		#	leg = plt.gca().get_legend()
+        	#       ltext  = leg.get_texts()
                 	#plt.setp(ltext, fontsize='small')
-	print "ARJUN ", len(X), len(Y), showimage.shape
+	#print "ARJUN ", len(X), len(Y), showimage.shape
 	cax=ax.pcolor(X,Y,showimage)
 	#fig.colorbar(cax)
 	return ax
@@ -186,8 +188,8 @@ class time_domain_data():
 		
 		dlistsad=[]
 		dlistsad.append(dir_data)
-		sadobj=sad.read_data(dlistsad,fid,'win',ftype)
-		#sadobj=sad.read_data(dlistsad,fid,'whole',ftype)
+		#sadobj=sad.read_data(dlistsad,fid,'win',ftype)
+		sadobj=sad.read_data(dlistsad,fid,'whole',ftype)
 		usrc_st=raw_input("Use all stations (y/n) ?: ")
 		if usrc_st=='y':
 			try:
@@ -296,12 +298,12 @@ fcspec = plot_spectrum(fc_spectrum,2,False)
 #cpicks=[float("%.5f" %x) for x in cpicks]
 #fcspec.plot(freqs_final,cpicks,'wo')
 plt.show()
-plt.savefig('music_result.png')
+#plt.savefig('music_result.png')
 usrc='n'
-if fid.endswith('SAC') or fid.endswith('sac'):
+#if fid.endswith('SAC') or fid.endswith('sac'):
+if '.SAC' in fid or '.sac' in fid:
 	# usually means you're looking at synthetic data
 	usrc=raw_input('Plot theoretical dispersion too ? (y/n): ')
-	#usrc='n'
 	if usrc=='y' or usrc=='Y':
 		fcspec = plot_spectrum(fc_spectrum,2,True)
 		plt.show()

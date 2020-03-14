@@ -23,8 +23,6 @@ import numpy as np
 import scipy.signal as ss
 import matplotlib.pyplot as plt
 
-sys.path.append('../modules_common')
-
 # Modules written by me
 import seisarray_data as sad
 import ucd_supplement as ucs
@@ -61,8 +59,10 @@ elif numf==2:
 	freqs=np.arange(flow,fhigh+fstep,fstep)
 	#freqs=np.insert(freqs,1,0.005)        # TEMPORARY CHANGE FOR TA DATA ANALYSIS (JAN 2016)
 	print "Frequency values for analysis: ", freqs
-crange = raw_input("Phase velocity range: ")
-urange = raw_input("Group velocity range: ")
+#crange = raw_input("Phase velocity range: ")
+crange="3.5 7.5"
+#urange = raw_input("Group velocity range: ")
+urange="3.2 6.0"
 totpick = int(raw_input("Total number of modes to pick ? "))
 cmin = float(crange.split()[0])
 cmax=float(crange.split()[1])
@@ -75,8 +75,8 @@ if fid.endswith('SAC') or fid.endswith('sac'):
 	ml=0
 	mh=totpick-1
 	if usrc=='y':
-		#showmnums=raw_input("Start and end mode numbers to plot: ")
-		showmnums="0 5"
+		showmnums=raw_input("Start and end mode numbers to plot: ")
+		#showmnums="0 5"
 		ml=int(showmnums.split()[0])
 		mh=int(showmnums.split()[1])
 		#minc=int(raw_input("Incident mode to highlight: "))
@@ -193,12 +193,18 @@ class do_single_frequency():
 		filtering=np.dot(np.ones((nrec,1)),self.gf)
 		ansig=xwdata*muting*filtering					# analytical signal
 		self.uc_est=self.taup(ansig)
+
 		if fhz<0.02:			# NB: TEMPORARY CHANGE FOR TA DATA ANALYSIS
 			self.uc_est=self.taup(ansig)
 		elif fhz<0.03:
 			self.uc_est=4.5
-		else:
+		#else:
+		#	self.uc_est=4.25
+		elif fhz<0.05:
 			self.uc_est=4.25
+		else:
+			self.uc_est=3.9
+
 		if prevuc != None and abs(self.uc_est-prevuc)>0.4*prevuc:
 			self.uc_est=prevuc
 		print "Using Uc = %f units" %(self.uc_est)
@@ -295,18 +301,18 @@ def make_ucd_plot(frad,wavnum,toplot,ucest,showucd):
 	#print "Shape of response function ", rk.shape
 	#ax_ucd=plt.subplot(111)
 	# for array response function plotted on right use following:
-	ax_rk=plt.subplot2grid((1,5),(0,4))
-	ax_ucd=plt.subplot2grid((1,5),(0,0),colspan=4)	
+	#ax_rk=plt.subplot2grid((1,5),(0,4))
+	#ax_ucd=plt.subplot2grid((1,5),(0,0),colspan=4)	
 	# for array response function plotted on top use following:
 	#ax_rk=plt.subplot2grid((6,1),(0,0),rowspan=1)
 	#ax_ucd=plt.subplot2grid((6,1),(1,0),rowspan=5)	
 	# for not plotting the array response function at all use the following:
-	#fig=plt.figure()
-	#ax_ucd=fig.add_subplot(111)
-	# Uncomment below to plot a legend for the contours
-	#fig.colorbar(cs)
+	fig=plt.figure()
+	ax_ucd=fig.add_subplot(111)
 	thisf=float('%.4f' %(frad/(2*np.pi)) )
 	cs=ax_ucd.contour(t,wavnum,toplot,levels=np.arange(contourmin,0))
+	# Uncomment below to plot a legend for the contours
+	#fig.colorbar(cs)
 	pv=np.linspace(cmin,cmax,10)
 	gv=np.linspace(umin,umax,6)
 	X=xbar/gv
@@ -320,7 +326,7 @@ def make_ucd_plot(frad,wavnum,toplot,ucest,showucd):
 	ax_ucd.set_xlim(xbar/umin,xbar/umax)
 	ax_ucd.set_ylim(frad/cmin,frad/cmax)
 	#ax_ucd.set_title('%.2f km/s' %(ucest))
-	ax_ucd.set_title('%.3f Hz, Uc=%.2f km/s' %(thisf,ucest))
+	#ax_ucd.set_title('%.3f Hz, Uc=%.2f km/s' %(thisf,ucest))
 	#ax_ucd.grid(True)
 	if synth_case:
 		for tm in range(len(theor_cdisp)):
@@ -346,19 +352,20 @@ def make_ucd_plot(frad,wavnum,toplot,ucest,showucd):
 				ax_ucd.plot(utmx,ctmy,'ko',ms=5,mew=2.0)
 				dc=ax_ucd.transData.transform((utmx,ctmy))
 				inv=ax_ucd.transAxes.inverted()
-				ac=inv.transform((dc[0],dc[1]+4))
+				#ac=inv.transform((dc[0],dc[1]+4))
+				ac=inv.transform((dc[0]+5,dc[1]-12))
 				tms="%d" %(tm)
 				# following controls where exactly the mode numbers are marked
 				ax_ucd.text(ac[0],ac[1],tms,transform=ax_ucd.transAxes,fontsize=14)
 	# following 8 lines need to be uncommented in order to plot the response function
-	ax_rk.plot(rkdb,wavnum)
-	ax_rk.set_ylim(frad/cmin,frad/cmax)
-	ax_rk.yaxis.tick_right()
-	ax_rk.xaxis.tick_top()
-	ax_rk.set_xlabel('r(k)')
-	rk_xtauto=ax_rk.get_xticks()
-	rk_xtshow=(rk_xtauto[1],rk_xtauto[-2])
-	ax_rk.set_xticks(rk_xtshow)
+	#ax_rk.plot(rkdb,wavnum)
+	#ax_rk.set_ylim(frad/cmin,frad/cmax)
+	#ax_rk.yaxis.tick_right()
+	#ax_rk.xaxis.tick_top()
+	#ax_rk.set_xlabel('r(k)')
+	#rk_xtauto=ax_rk.get_xticks()
+	#rk_xtshow=(rk_xtauto[1],rk_xtauto[-2])
+	#ax_rk.set_xticks(rk_xtshow)
 	if showucd:
 		figpath=None
 		stlocs_im=np.linspace(epdist[0],epdist[-1],nrec)
@@ -392,7 +399,8 @@ for fnum,f0 in enumerate(freqs):
 		else:
 			dsfobj=do_single_frequency(f0,ucused)
 			ucused=dsfobj.uc_est
-		#currax,savenm=make_ucd_plot(dsfobj.omega0,dsfobj.ktrials,dsfobj.tkdb,dsfobj.uc_est,False)
+		# NB: uncomment below line to MAKE UC-diagram at each frequency
+		currax,savenm=make_ucd_plot(dsfobj.omega0,dsfobj.ktrials,dsfobj.tkdb,dsfobj.uc_est,False)
 		print "Done. Picking modes on the UC diagram..."
 		peaks=ucs.get_peaks(dsfobj.tkdb,umin,umax,xbar,t,contourmin,totpick,False)
 		pv_thisf=[None for i in range(totpick)]
@@ -402,22 +410,26 @@ for fnum,f0 in enumerate(freqs):
 			mu=xbar/t[m[1]]
 			pv_thisf[e]=mc
 			gv_thisf[e]=mu
-		#	currax.plot(t[m[1]],dsfobj.ktrials[m[0]],'k+',ms=25,mew=2.0)
-		#plt.savefig(savenm)
+			# this is where you mark the picked values with '+' signs
+			currax.plot(t[m[1]],dsfobj.ktrials[m[0]],'k+',ms=25,mew=2.0)
+		# NB: uncomment above and  below lines to SAVE UC-diagram at each frequency
+		plt.savefig(savenm)
 		#print pv_thisf
 		#print gv_thisf
 		pv_allf.append(pv_thisf)
 		gv_allf.append(gv_thisf)
 	elif len(freqs)==1:
 		dsfobj=do_single_frequency(f0)
-		currax,savenm=make_ucd_plot(dsfobj.omega0,dsfobj.ktrials,dsfobj.tkdb,dsfobj.uc_est,True)
+		currax,savenm=make_ucd_plot(dsfobj.omega0,dsfobj.ktrials,dsfobj.tkdb,dsfobj.uc_est,False)
 		peaks=ucs.get_peaks(dsfobj.tkdb,umin,umax,xbar,t,contourmin,totpick,True)
-		for pk in peaks:
+		for pkc, pk in enumerate(peaks):
 			pvel=dsfobj.omega0/dsfobj.ktrials[pk[0]]
 			gvel=xbar/t[pk[1]]
 			print "Picked phase and group velocity: ", pvel, gvel
-			# this is where you mark the picked values with '+' signs
-			currax.plot(t[pk[1]],dsfobj.ktrials[pk[0]],'k+',ms=25,mew=2.0)
+			# this is where you mark the picked values with '+/*' signs
+			pnum="Pick %d" %(pkc+1)
+			currax.plot(t[pk[1]],dsfobj.ktrials[pk[0]],'*',ms=16,mew=0.5,label=pnum)
+		plt.legend(loc=4)
 		plt.show()			
 if len(freqs)>1:
 	for xfig in range(2):

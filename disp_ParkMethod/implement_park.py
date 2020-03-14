@@ -15,6 +15,8 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
+sys.path.append('../modules_common')
+
 # Modules written by me
 import seisarray_data as sad
 import park_method as pm
@@ -35,12 +37,11 @@ def plot_spectrum(showimage,scaleshow,showth,pp):
         if scaleshow:
         	#cb = pmfig.colorbar(cax,orientation='horizontal',fraction=0.05,pad=0.15)
                cb = pmfig.colorbar(cax)
-	showth=False
 	if showth:
 		dfile=raw_input('File containing theoretical dispersion: ')
 		#dispfile=os.path.join(script_dir,dfile)
 		mnums=raw_input("Start and end mode numbers to plot: ")
-		minc=int(raw_input("Incident mode to highlight: "))
+		#minc=int(raw_input("Incident mode to highlight: "))
 		ml=int(mnums.split()[0])
 		mh=int(mnums.split()[1])
 		theor_disp = reo.read_disp([dfile],ml,mh)
@@ -54,10 +55,10 @@ def plot_spectrum(showimage,scaleshow,showth,pp):
 				f = [x for x,y,z in solidcurves[i]]
 			        v = [y for x,y,z in solidcurves[i]]
 		        curve_name="Mode %d" %mode
-			if mode==minc:
-				ax.plot(f,v,'-',linewidth=2,color=mcol[mode],label=curve_name)
-			else:
-		        	ax.plot(f,v,'--',linewidth=2,color=mcol[mode],label=curve_name)
+			#if mode==minc:
+			ax.plot(f,v,'-',linewidth=2,color=mcol[mode],label=curve_name)
+			#else:
+		        #ax.plot(f,v,'--',linewidth=2,color=mcol[mode],label=curve_name)
 		ax.legend(loc='best')
         if pp==1:
 		ucdpfname=raw_input('UCD pickle file: ')
@@ -113,10 +114,10 @@ class get_freqdomain_info():
 		
 		dlistsad=[]
 		dlistsad.append(dir_data)
-		sadobj=sad.read_data(dlistsad,fid,'win',ftype)
-		#sadobj=sad.read_data(dlistsad,fid,'whole',ftype)
-		#usrc_st=raw_input("Use all stations (y/n) ?: ")
-		usrc_st='y'
+		#sadobj=sad.read_data(dlistsad,fid,'win',ftype)
+		sadobj=sad.read_data(dlistsad,fid,'whole',ftype)
+		usrc_st=raw_input("Use all stations (y/n) ?: ")
+		#usrc_st='y'
                 if usrc_st=='y':
 			try:
 				tdodata=sadobj.windata
@@ -211,13 +212,14 @@ usrc3='n'
 usrc='y'
 if usrc2=='y' or usrc2=='Y':
 	specnorm=specraw/np.max(specraw,0)
-	plot_spectrum(specnorm,False,True,0)
+	plot_spectrum(specnorm,False,False,0)
 	#if fid.endswith('SAC') or fid.endswith('sac'):
-	#	while usrc != 'n':
-	#		usrc=raw_input('Plot theoretical dispersion ? (y/n): ')
-	#		if usrc=='y' or usrc=='Y':
-	#			shot=True
-	#			plot_spectrum(specnorm,True,shot,0)
+	if '.SAC' in fid or '.sac' in fid:
+		while usrc != 'n':
+			usrc=raw_input('Plot theoretical dispersion ? (y/n): ')
+			if usrc=='y' or usrc=='Y':
+				shot=True
+				plot_spectrum(specnorm,False,shot,0)
 	while usrc3 != 'n':
 		usrc3=raw_input("Plot a pickled file on top (y/n): ")
 		if usrc3=='y' or usrc3=='Y':

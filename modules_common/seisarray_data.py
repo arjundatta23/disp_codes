@@ -85,7 +85,7 @@ class read_data():
 		print "start and end times are: ", self.tstart, self.tend
 		tlen = self.tend + self.si - self.tstart
 		#self.fulldata = np.matrix(np.zeros((len(records),samples)))
-		self.fulldata = np.matrix(np.zeros((len(records),math.ceil(tlen))))
+		self.fulldata = np.matrix(np.zeros((len(records),int(math.ceil(tlen)))))
 		print "Shape of fulldata is ", self.fulldata.shape
 		if __name__ == '__main__':
 			print "\nMin ep dist of array is for station %s: %.3f" %(self.stnames[0],ep_dist[0])

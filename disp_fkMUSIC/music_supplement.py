@@ -156,16 +156,21 @@ class view_pickle():
 
 	def make_plot(self):
 
+		mcol=['b','g','r','c','m','y','k','b','g','r']
 		usrc='n'
 		usrc=raw_input("See theoretical dispersion too ? (y/n): ")
 		if usrc=='y':
 			thdpfile=[raw_input('File containing theoretical dispersion: ')]
+			mnums=raw_input("Start and end mode numbers to plot: ")
+			#minc=int(raw_input("Incident mode to highlight: "))
+			ml=int(mnums.split()[0])
+			mh=int(mnums.split()[1])
 			#try:
-			#reoobj = reo.read_disp(thdpfile,0,5)
-			#theor_cdisp = reoobj.modcdisp[0]
-			#theor_udisp = reoobj.modudisp[0]
-			rs96obj = rs96.read_disp(thdpfile)
-			theor_cdisp = rs96obj.disp[0]
+			reoobj = reo.read_disp(thdpfile,ml,mh)
+			theor_cdisp = reoobj.modcdisp[0]
+			theor_udisp = reoobj.modudisp[0]
+			#rs96obj = rs96.read_disp(thdpfile)
+			#theor_cdisp = rs96obj.disp[0]
 			
 			solidcurve = theor_cdisp
 		else:
@@ -187,12 +192,13 @@ class view_pickle():
 				sizy=12
 			spec=plt.figure(figsize=(12,sizy))
 
-		usr_t=raw_input("Enter title of plot: ")
-		spec.suptitle('Event '+usr_t)
+		#usr_t=raw_input("Enter title of plot: ")
+		#spec.suptitle('Event '+usr_t)
 
 		for i,pfile in enumerate(self.plist):
 			jar=open(pfile)
 			cookie1=pickle.load(jar)
+			print cookie1
 			f1=cookie1[0] #0.0065
 			f2=cookie1[1] #0.0615
 			cookie2=pickle.load(jar)
@@ -219,14 +225,18 @@ class view_pickle():
 			#print "Shape of matrix is: ", self.resmat[i].shape
 			cax=axspec.pcolor(X,Y,self.resmat[i])
 			axspec.set_xlim(self.freqs[i][0],self.freqs[i][-1])
-			axspec.set_ylim(3,7)
+			axspec.set_ylim(3,5)
+			axspec.axhline(y=3.5,color='w')
+			axspec.axvline(x=0.05,color='w')
 			axspec.set_xlabel('Frequency [Hz]')
 			axspec.set_ylabel('Phase Velocity [km/s]')
 			#axspec.set_title('self.resmat of %d events' %(len(jarlist)))
+			#axspec.set_title(usr_t)
 			#spec.colorbar(cax)
 
-			if usrc=='y' and i==1:
-				for k in range(len(solidcurve)):
+			if usrc=='y':# and i>0:
+				#for k in range(len(solidcurve)):
+				for k,mode in enumerate(reoobj.rel_modes):
 					print "mode number: ", k
 					try:
 						f = [x for x,y,z in solidcurve[k]]
@@ -234,9 +244,10 @@ class view_pickle():
 					except ValueError:
 						f = [x for x,y in solidcurve[k]]
 						v = [y for x,y in solidcurve[k]]
-					curve_name="Mode %d" %k
-					axspec.plot(f,v,'-',linewidth=2) #,label=curve_name)
-		
+					curve_name="Mode %d" %mode
+					axspec.plot(f,v,'-',linewidth=2,color=mcol[mode],label=curve_name)
+		axspec.legend()		
+
 		#usrc_extra=raw_input("Plot ucd pickle too ? (y/n): ")
 		#usrc_extra='n'
 		#if usrc_extra=='y':
@@ -256,8 +267,8 @@ class view_pickle():
 		#	except ValueError:
 		#		print "Unable to read ucd pickle file"
 		#		pass
-		plt.show()
-		#plt.savefig('music_pickle_plot.png')
+		#plt.show()
+		plt.savefig('music_pickle_plot.png')
 
 #####################################################################################################
 # Main program - for using this module by itself

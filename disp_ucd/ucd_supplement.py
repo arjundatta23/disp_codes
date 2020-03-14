@@ -71,6 +71,7 @@ def get_peaks(inmat,gvmin,gvmax,dist,ts,thresh,npick,verbose):
 		r+=1
 	""" Sort the peaks in ascending order of magnitude """
 	peaklocs=[b for a,b in sorted(zip(peakv,peaklocs))]
+	
 	""" Filter out those peaks that occur very close to the global maxima """
 	# the way I do this is very ad-hoc, must replace with something more theoretically sound
 	neargmc=range(colgm-wwidth,colgm+wwidth)
@@ -82,10 +83,16 @@ def get_peaks(inmat,gvmin,gvmax,dist,ts,thresh,npick,verbose):
 	
 	""" Ensure you pick only npick number of modes """
 	if len(relpeaks)>(npick-1):
+	# drop the lowest amplitude picks that are superfluous
 		extra=len(relpeaks)-(npick-1)
 		relpeaks=relpeaks[extra:]
+	
 	""" Make sure the global maxima is included """
-	relpeaks.insert(0,[rowgm,colgm])
+	#relpeaks.insert(0,[rowgm,colgm])
+	# modif. ARJUN Aug 2018: global maxima needs to go to the END of the list
+	# as it is in ASCENDING order.
+	relpeaks.append([rowgm,colgm])
+	
 	""" Discard any peak that is extremely close, in phase velocity, to another one of greater amplitude """
 	pn=0
 	while pn<len(relpeaks)-1:
@@ -104,6 +111,8 @@ def get_peaks(inmat,gvmin,gvmax,dist,ts,thresh,npick,verbose):
 				break
 		pn+=1
 	
+	# modif. ARJUN August 2018: finally, sort the selected peaks in descending order of magnitude
+	relpeaks=relpeaks[::-1]
 	if verbose:
 		print "Location of finally selected peaks: ", relpeaks
 	return relpeaks
@@ -136,7 +145,7 @@ def make_pickle(wdir,fsamples,cdisp,udisp):
 	jaru.close()
 
 #####################################################################################################
-# Class to perform various opeations with previously stored results (pickles)
+# Class to perform various operations with previously stored results (pickles)
 #####################################################################################################
 
 class workon_pickle():
@@ -171,11 +180,11 @@ class workon_pickle():
 	
 		#usrc=raw_input("See theoretical dispersion too ? (y/n): ")
 		usrc='y'
-
+		mcol=['b','g','r','c','m','y','k','b','g','r']
 		ncols=1
 		r=self.totp/ncols if self.totp%ncols==0 else (self.totp/ncols)+1
-		#usr_t=raw_input("Enter title of plot: ")
-		usr_t="whatever"
+		usr_t=raw_input("Enter title of plot: ")
+		#usr_t="whatever"
 		if r==1:
 			sizy=4.75
 		elif r==2:
@@ -193,7 +202,8 @@ class workon_pickle():
 			npicks=vel.shape[1]
 			ax=fig.add_subplot(r,ncols,i+1)
 			if usrc=='y' and len(thdpfile)>0:
-				for k in range(len(solidcurve)):
+				#for k in range(len(solidcurve)):
+				for k,mode in enumerate(reoobj.rel_modes):
 					print "mode number: ", k
 					try:
 						f = [x for x,y,z in solidcurve[k]]
@@ -201,17 +211,17 @@ class workon_pickle():
 					except ValueError:
 						f = [x for x,y in solidcurve[k]]
 						v = [y for x,y in solidcurve[k]]
-					curve_name="Mode %d" %k
-					ax.plot(f,v,'.-') #,label=curve_name)
+					curve_name="Mode %d" %mode
+					ax.plot(f,v,'-',color=mcol[mode],label=curve_name)
 			for pick in range(npicks):
 				cpick=vel[:,pick]
 				curve_name="UCD pick %d" %(pick+1)
-				ax.plot(fsam,cpick,'*',label=curve_name)
+				ax.plot(fsam,cpick,'*',ms=8,label=curve_name)
 			try:
 				pl=npicks+len(solidcurve)
 			except NameError:
 				pl=npicks
-			pl=npicks
+			#pl=npicks
 			if pl<=4:
 				legcols=1
 				legsp=1
@@ -225,9 +235,9 @@ class workon_pickle():
 			#ax.set_ylabel('Group Velocity [km/s]')
 			#ax.set_ylim(2,6)
 			ax.set_ylabel('Phase Velocity [km/s]')
-			ax.set_ylim(3,7)
-			ax.set_xlim(0.005,0.065)
-			#ax.set_title(usr_t)
+			ax.set_ylim(3,7.5)
+			ax.set_xlim(0.005,0.08)
+			ax.set_title(usr_t)
 			#plt.grid(True)
 			if i==0:
 				ax.legend(loc=1,labelspacing=legsp,ncol=legcols,prop={'size':12})
@@ -388,13 +398,17 @@ if __name__=='__main__':
 		flist.append(fname)
 	thdpfile=raw_input('File containing theoretical dispersion (just hit ENTER if N/A): ')
 	if len(thdpfile)>0:
+		mnums=raw_input("Start and end mode numbers to plot: ")
+		#minc=int(raw_input("Incident mode to highlight: "))
+		ml=int(mnums.split()[0])
+		mh=int(mnums.split()[1])
 		#try:
-		reoobj = reo.read_disp([thdpfile],0,5)
-		#theor_cdisp = reoobj.modcdisp[0]
+		reoobj = reo.read_disp([thdpfile],ml,mh)
+		theor_cdisp = reoobj.modcdisp[0]
 		#theor_udisp = reoobj.modudisp[0]
 		#except IndexError:
-		rs96obj = rs96.read_disp([thdpfile])
-		theor_cdisp = rs96obj.disp[0]
+		#rs96obj = rs96.read_disp([thdpfile])
+		#theor_cdisp = rs96obj.disp[0]
 		#rs96obj = rs96.read_disp('udisp_surf96.ray')
 		#theor_udisp = rs96obj.disp[0]
 		solidcurve = theor_cdisp
