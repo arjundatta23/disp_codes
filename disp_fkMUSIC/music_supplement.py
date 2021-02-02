@@ -6,9 +6,12 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
+sys.path.append(os.path.expanduser('~/code_general/modules.python'))
+# path to extraneous modules
+
 # Modules written by me
-import read_earth_io as reo
-import read_surf96_io as rs96
+import SW1D_earthsr.read_earthsr_io as reo
+# import read_surf96_io as rs96
 
 ###################################################################################################
 
@@ -37,7 +40,7 @@ def store_result():
 	fname=flist[0]
 	jarname=fname.replace("music","mpic")
 	jarfile=os.path.join(os.getcwd(),jarname)
-	jar=open(jarfile,'w')
+	jar=open(jarfile,'wb')
 	pickle.dump(ypobj.finalans,jar)
 	jar.close()
 
@@ -49,8 +52,8 @@ class ypick():
 
 		# inputs are f-c spectrum, freqs, pvels, th<1
 
-		xdom=raw_input("frequency bounds (or just lower bound) for picking: ")
-		ydom=raw_input("phase velocity bounds (or just lower bound) for picking: ")
+		xdom=input("frequency bounds (or just lower bound) for picking: ")
+		ydom=input("phase velocity bounds (or just lower bound) for picking: ")
 		try:
 			x1=float(xdom.split()[0])
 			x2=float(xdom.split()[1])
@@ -68,9 +71,9 @@ class ypick():
 		relspec=inspec[relrows[0]:relrows[-1]+1,relcols[0]:relcols[-1]+1]
 		crel=yvalues[relrows[0]:relrows[-1]+1]
 		self.frel=xvalues[relcols[0]:relcols[-1]+1]
-		#print "Shape of selected portion is ", relspec.shape
-		#print "Relevant c-values: ", crel
-		#print "Relevant frequencies: ", self.frel
+		# print("Shape of selected portion is ", relspec.shape)
+		# print("Relevant c-values: ", crel)
+		# print("Relevant frequencies: ", self.frel)
 		indmax_relspec=np.argmax(relspec,axis=0)
 		indmax_orig=[ ir+relrows[0] for ir in indmax_relspec]
 		self.ypicks=[float("%.5f" %x) for x in crel[indmax_relspec]]
@@ -83,11 +86,11 @@ class ypick():
 			bw=np.where(ostf>=threshold*mvtf)[0] 				# bw is for bandwidth
 			belowmax=ostf[bw[0]:indmax_orig[pn]][::-1]
 			abovemax=ostf[indmax_orig[pn]:bw[-1]]
-			print xvalues[col_orig], mvtf, ptf, yvalues[bw[0]], yvalues[bw[-1]]
+			print(xvalues[col_orig], mvtf, ptf, yvalues[bw[0]], yvalues[bw[-1]])
 			lb=yvalues[bw[0]]
 			ub=yvalues[bw[-1]]
 			if not all(belowmax[i]>=belowmax[i+1] for i in range(len(belowmax)-1)):
-				print "Intelligent lower bound picking at frequency ", xvalues[col_orig]
+				print("Intelligent lower bound picking at frequency ", xvalues[col_orig])
 				hwbelow=bw[bw<indmax_orig[pn]][::-1] # hw is for half-width
 				cbelow=yvalues[bw[0]:indmax_orig[pn]][::-1]
 				""" First, check if there's any gap at all in hwbelow """
@@ -101,13 +104,13 @@ class ypick():
 				sh=[ j for j in range(len(belowmax)-1) if belowmax[j+1]>belowmax[j] ]
 				if len(sh)>0:
 					lb=cbelow[sh[0]]
-				#if float("%.4f" %(xvalues[col_orig]))==0.0405:
-				#	print "cutoff is ", cutoff
-				#	print lb
-				#	print belowmax
-				#	print "sh is ", sh
+				# if float("%.4f" %(xvalues[col_orig]))==0.0405:
+				#	print("cutoff is ", cutoff)
+				#	print(lb)
+				#	print(belowmax)
+				#	print("sh is ", sh)
 			if not all(abovemax[i]>=abovemax[i+1] for i in range(len(abovemax)-1)):
-				print "Intelligent upper bound picking at frequency ", xvalues[col_orig]
+				print("Intelligent upper bound picking at frequency ", xvalues[col_orig])
 				hwabove=bw[bw>=indmax_orig[pn]] # hw is for half-width
 				cabove=yvalues[indmax_orig[pn]:bw[-1]]
 				""" First, check if there's any gap at all in hwabove """
@@ -119,156 +122,156 @@ class ypick():
 				sh=[ j for j in range(len(abovemax)-1) if abovemax[j+1]>abovemax[j] ]
 				if len(sh)>0:
 					ub=cabove[sh[0]]
-			print "Bounds are ", lb, ub
+			print("Bounds are ", lb, ub)
 			self.picklb.append(lb)
 			self.pickub.append(ub)
 		self.calculate_error()
-	
+
 	def calculate_error(self):
-		
-		print "Getting error estimate... "
-		#errtop=[i-j for i,j in zip(self.pickub,self.ypicks)]
-		#errbot=[i-j for i,j in zip(self.ypicks,self.picklb)]
-		#errav=[(i+j)/2 for i,j in zip(errbot,errtop)]
-		errpick=range(len(self.frel))
+
+		print("Getting error estimate... ")
+		# errtop=[i-j for i,j in zip(self.pickub,self.ypicks)]
+		# errbot=[i-j for i,j in zip(self.ypicks,self.picklb)]
+		# errav=[(i+j)/2 for i,j in zip(errbot,errtop)]
+		errpick=list(range(len(self.frel)))
 		ystep=0.01
 		for f,fr in enumerate(self.frel):
 			ydist=np.arange(self.picklb[f],self.pickub[f],ystep)
 			sd=np.std(ydist)
 			errpick[f]=sd
 		self.finalans=zip(self.frel,self.ypicks,errpick)
-		#print self.finalans
+		# print self.finalans
 
 ##########################################################################################################
 
 class view_pickle():
 
-	def __init__(self,pfilelist):
-	
-		self.totp=len(pfilelist)
-		self.plist=pfilelist
+    def __init__(self,pfilelist):
 
-		self.freqs=range(self.totp)
-		self.pvels=range(self.totp)
-		self.resmat=range(self.totp)
+        self.totp=len(pfilelist)
+        self.plist=pfilelist
 
-                self.make_plot()
+        self.freqs=list(range(self.totp))
+        self.pvels=list(range(self.totp))
+        self.resmat=list(range(self.totp))
 
-	def make_plot(self):
+        self.make_plot()
 
-		mcol=['b','g','r','c','m','y','k','b','g','r']
-		usrc='n'
-		usrc=raw_input("See theoretical dispersion too ? (y/n): ")
-		if usrc=='y':
-			thdpfile=[raw_input('File containing theoretical dispersion: ')]
-			mnums=raw_input("Start and end mode numbers to plot: ")
-			#minc=int(raw_input("Incident mode to highlight: "))
-			ml=int(mnums.split()[0])
-			mh=int(mnums.split()[1])
-			#try:
-			reoobj = reo.read_disp(thdpfile,ml,mh)
-			theor_cdisp = reoobj.modcdisp[0]
-			theor_udisp = reoobj.modudisp[0]
-			#rs96obj = rs96.read_disp(thdpfile)
-			#theor_cdisp = rs96obj.disp[0]
-			
-			solidcurve = theor_cdisp
-		else:
-			theor_cdisp=0
-			theor_udisp=0
+    def make_plot(self):
 
-		if self.totp==1:
-			pncols=1
-			r=1
-			spec=plt.figure()
-		else:
-			pncols=2
-			r=self.totp/pncols if self.totp%pncols==0 else (self.totp/pncols)+1
-			if r==1:
-				sizy=4.75
-			elif r==2:
-				sizy=9
-			elif r==3:
-				sizy=12
-			spec=plt.figure(figsize=(12,sizy))
+    	mcol=['b','g','r','c','m','y','k','b','g','r']
+    	usrc='n'
+    	usrc=input("See theoretical dispersion too ? (y/n): ")
+    	if usrc=='y':
+    		thdpfile=[input('File containing theoretical dispersion: ')]
+    		mnums=input("Start and end mode numbers to plot: ")
+    		#minc=int(input("Incident mode to highlight: "))
+    		ml=int(mnums.split()[0])
+    		mh=int(mnums.split()[1])
+    		#try:
+    		reoobj = reo.read_disp(thdpfile,ml,mh)
+    		theor_cdisp = reoobj.modcdisp[0]
+    		theor_udisp = reoobj.modudisp[0]
+    		#rs96obj = rs96.read_disp(thdpfile)
+    		#theor_cdisp = rs96obj.disp[0]
 
-		#usr_t=raw_input("Enter title of plot: ")
-		#spec.suptitle('Event '+usr_t)
+    		solidcurve = theor_cdisp
+    	else:
+    		theor_cdisp=0
+    		theor_udisp=0
 
-		for i,pfile in enumerate(self.plist):
-			jar=open(pfile)
-			cookie1=pickle.load(jar)
-			print cookie1
-			f1=cookie1[0] #0.0065
-			f2=cookie1[1] #0.0615
-			cookie2=pickle.load(jar)
-			cmin=cookie2[0] #3
-			cmax=cookie2[1] #8
-			cookie3 = pickle.load(jar)
-			nrows=cookie3.shape[0]
-			ncols=cookie3.shape[1]
-			print "No. of rows and columns: ", nrows, ncols
-			self.freqs[i]=np.linspace(f1,f2,ncols)
-			self.pvels[i]=np.linspace(cmin,cmax,nrows)
-			print "Length of pvels and freqs: ", len(self.pvels[i]), len(self.freqs[i])
-			self.resmat[i]=np.zeros((nrows,ncols))
-			try:
-				self.resmat[i]=cookie3
-			except IndexError:
-				sys.exit('Please check the dimensions of the stored matrix and try again')
-			jar.close()
-		
-			axspec=spec.add_subplot(r,pncols,i+1)
-			#spec=plt.figure()
-			#axspec=spec.add_subplot(111)
-			X,Y = np.meshgrid(self.freqs[i],self.pvels[i])
-			#print "Shape of matrix is: ", self.resmat[i].shape
-			cax=axspec.pcolor(X,Y,self.resmat[i])
-			axspec.set_xlim(self.freqs[i][0],self.freqs[i][-1])
-			axspec.set_ylim(3,5)
-			axspec.axhline(y=3.5,color='w')
-			axspec.axvline(x=0.05,color='w')
-			axspec.set_xlabel('Frequency [Hz]')
-			axspec.set_ylabel('Phase Velocity [km/s]')
-			#axspec.set_title('self.resmat of %d events' %(len(jarlist)))
-			#axspec.set_title(usr_t)
-			#spec.colorbar(cax)
+    	if self.totp==1:
+    		pncols=1
+    		r=1
+    		spec=plt.figure()
+    	else:
+    		pncols=2
+    		r=self.totp/pncols if self.totp%pncols==0 else (self.totp/pncols)+1
+    		if r==1:
+    			sizy=4.75
+    		elif r==2:
+    			sizy=9
+    		elif r==3:
+    			sizy=12
+    		spec=plt.figure(figsize=(12,sizy))
 
-			if usrc=='y':# and i>0:
-				#for k in range(len(solidcurve)):
-				for k,mode in enumerate(reoobj.rel_modes):
-					print "mode number: ", k
-					try:
-						f = [x for x,y,z in solidcurve[k]]
-						v = [y for x,y,z in solidcurve[k]]
-					except ValueError:
-						f = [x for x,y in solidcurve[k]]
-						v = [y for x,y in solidcurve[k]]
-					curve_name="Mode %d" %mode
-					axspec.plot(f,v,'-',linewidth=2,color=mcol[mode],label=curve_name)
-		axspec.legend()		
+    	#usr_t=input("Enter title of plot: ")
+    	#spec.suptitle('Event '+usr_t)
 
-		#usrc_extra=raw_input("Plot ucd pickle too ? (y/n): ")
-		#usrc_extra='n'
-		#if usrc_extra=='y':
-		#	ucdpfname=raw_input('UCD pickle file: ')
-		#	ucdpfile=os.path.normpath(os.path.join(script_dir,ucdpfname))
-			#ucdpfname=[n for n in os.listdir(ucdpdir) if self.pname+'_c' in n][0]
-		#	try:
-		#		jar=open(ucdpfile)
-		#		print "Reading ", ucdpfile
-		#		cookie3 = pickle.load(jar)
-		#		fsam=np.array([float("%.4f" %(x)) for x,y in cookie3])
-		#		vel=np.array([y for x,y in cookie3])
-		#		npicks=vel.shape[1]
-		#		for pick in range(npicks):
-		#			cpick=vel[:,pick]
-		#			axspec.plot(fsam,cpick,'wo')
-		#	except ValueError:
-		#		print "Unable to read ucd pickle file"
-		#		pass
-		#plt.show()
-		plt.savefig('music_pickle_plot.png')
+    	for i,pfile in enumerate(self.plist):
+    		jar=open(pfile, 'rb')
+    		cookie1=pickle.load(jar)
+    		print(cookie1)
+    		f1=cookie1[0] #0.0065
+    		f2=cookie1[1] #0.0615
+    		cookie2=pickle.load(jar)
+    		cmin=cookie2[0] #3
+    		cmax=cookie2[1] #8
+    		cookie3 = pickle.load(jar)
+    		nrows=cookie3.shape[0]
+    		ncols=cookie3.shape[1]
+    		print("No. of rows and columns: ", nrows, ncols)
+    		self.freqs[i]=np.linspace(f1,f2,ncols)
+    		self.pvels[i]=np.linspace(cmin,cmax,nrows)
+    		print("Length of pvels and freqs: ", len(self.pvels[i]), len(self.freqs[i]))
+    		self.resmat[i]=np.zeros((nrows,ncols))
+    		try:
+    			self.resmat[i]=cookie3
+    		except IndexError:
+    			raise SystemExit('Please check the dimensions of the stored matrix and try again')
+    		jar.close()
+
+    		axspec=spec.add_subplot(r,pncols,i+1)
+    		#spec=plt.figure()
+    		#axspec=spec.add_subplot(111)
+    		X,Y = np.meshgrid(self.freqs[i],self.pvels[i])
+    		# print("Shape of matrix is: ", self.resmat[i].shape)
+    		cax=axspec.pcolor(X,Y,self.resmat[i])
+    		axspec.set_xlim(self.freqs[i][0],self.freqs[i][-1])
+    		axspec.set_ylim(3,5)
+    		axspec.axhline(y=3.5,color='w')
+    		axspec.axvline(x=0.05,color='w')
+    		axspec.set_xlabel('Frequency [Hz]')
+    		axspec.set_ylabel('Phase Velocity [km/s]')
+    		#axspec.set_title('self.resmat of %d events' %(len(jarlist)))
+    		#axspec.set_title(usr_t)
+    		#spec.colorbar(cax)
+
+    		if usrc=='y':# and i>0:
+    			#for k in range(len(solidcurve)):
+    			for k,mode in enumerate(reoobj.rel_modes):
+    				print("mode number: ", k)
+    				try:
+    					f = [x for x,y,z in solidcurve[k]]
+    					v = [y for x,y,z in solidcurve[k]]
+    				except ValueError:
+    					f = [x for x,y in solidcurve[k]]
+    					v = [y for x,y in solidcurve[k]]
+    				curve_name="Mode %d" %mode
+    				axspec.plot(f,v,'-',linewidth=2,color=mcol[mode],label=curve_name)
+    	# axspec.legend()
+
+    	#usrc_extra=input("Plot ucd pickle too ? (y/n): ")
+    	#usrc_extra='n'
+    	#if usrc_extra=='y':
+    	#	ucdpfname=input('UCD pickle file: ')
+    	#	ucdpfile=os.path.normpath(os.path.join(script_dir,ucdpfname))
+    		#ucdpfname=[n for n in os.listdir(ucdpdir) if self.pname+'_c' in n][0]
+    	#	try:
+    	#		jar=open(ucdpfile, 'rb')
+    	#		print("Reading ", ucdpfile)
+    	#		cookie3 = pickle.load(jar)
+    	#		fsam=np.array([float("%.4f" %(x)) for x,y in cookie3])
+    	#		vel=np.array([y for x,y in cookie3])
+    	#		npicks=vel.shape[1]
+    	#		for pick in range(npicks):
+    	#			cpick=vel[:,pick]
+    	#			axspec.plot(fsam,cpick,'wo')
+    	#	except ValueError:
+    	#		print("Unable to read ucd pickle file")
+    	#		pass
+    	#plt.show()
+    	plt.savefig('music_pickle_plot.png')
 
 #####################################################################################################
 # Main program - for using this module by itself
@@ -276,47 +279,47 @@ class view_pickle():
 
 if __name__=='__main__':
 
-	script_dir=os.getcwd()
-	nfiles=len(sys.argv)
-	filnums=range(1,nfiles)
-	flist=[]
-	for fn in filnums:
-		fname=sys.argv[fn]
-		flist.append(fname)
-	#picklefile=sys.argv[1]		obsolete; for use when there was necessarily only one input
-	#vpobj=view_pickle(picklefile)
-	if len(flist)==1:
-		usrc=raw_input("Pick curve (with errors) on spectrum ? (y/n): ")
-		if usrc=='y':
-			jar=open(flist[0])
-			cookie1=pickle.load(jar)
-			f1=cookie1[0]
-			f2=cookie1[1]
-			cookie2=pickle.load(jar)
-			cmin=cookie2[0]
-			cmax=cookie2[1]
-			cookie3 = pickle.load(jar)
-			nrows=cookie3.shape[0]
-			ncols=cookie3.shape[1]
-			print "No. of rows and columns: ", nrows, ncols
-			freqs=np.linspace(f1,f2,ncols)
-			pvels=np.linspace(cmin,cmax,nrows)
-			print "Length of pvels and freqs: ", len(pvels), len(freqs)
-			resmat=np.zeros((nrows,ncols))
-			try:
-				resmat=cookie3
-			except IndexError:
-				sys.exit('Please check the dimensions of the stored matrix and try again')
-			jar.close()
-			show_single(resmat,False)
-			ypobj=ypick(resmat,freqs,pvels,0.95)
-			fwinpick=ypobj.frel
-			pv=ypobj.ypicks
-			pvub=ypobj.pickub
-			pvlb=ypobj.picklb
-			show_single(resmat,True)
-			store_result()
-		else:
-			vpobj=view_pickle(flist)
-	else:
-		vpobj=view_pickle(flist)
+    script_dir=os.getcwd()
+    nfiles=len(sys.argv)
+    filnums=range(1,nfiles)
+    flist=[]
+    for fn in filnums:
+    	fname=sys.argv[fn]
+    	flist.append(fname)
+    #picklefile=sys.argv[1]		obsolete; for use when there was necessarily only one input
+    #vpobj=view_pickle(picklefile)
+    if len(flist)==1:
+    	usrc=input("Pick curve (with errors) on spectrum ? (y/n): ")
+    	if usrc=='y':
+    		jar=open(flist[0], 'rb')
+    		cookie1=pickle.load(jar)
+    		f1=cookie1[0]
+    		f2=cookie1[1]
+    		cookie2=pickle.load(jar)
+    		cmin=cookie2[0]
+    		cmax=cookie2[1]
+    		cookie3 = pickle.load(jar)
+    		nrows=cookie3.shape[0]
+    		ncols=cookie3.shape[1]
+    		print("No. of rows and columns: ", nrows, ncols)
+    		freqs=np.linspace(f1,f2,ncols)
+    		pvels=np.linspace(cmin,cmax,nrows)
+    		print("Length of pvels and freqs: ", len(pvels), len(freqs))
+    		resmat=np.zeros((nrows,ncols))
+    		try:
+    			resmat=cookie3
+    		except IndexError:
+    			raise SystemExit('Please check the dimensions of the stored matrix and try again')
+    		jar.close()
+    		show_single(resmat,False)
+    		ypobj=ypick(resmat,freqs,pvels,0.95)
+    		fwinpick=ypobj.frel
+    		pv=ypobj.ypicks
+    		pvub=ypobj.pickub
+    		pvlb=ypobj.picklb
+    		show_single(resmat,True)
+    		store_result()
+    	else:
+    		vpobj=view_pickle(flist)
+    else:
+    	vpobj=view_pickle(flist)

@@ -22,15 +22,15 @@ def dosinglefreq(absdist,true_phase,ktrials,tempprint=False):
 ######################################################################################
 # The below was used for debugging
 #	if tempprint:
-#		print "Distances are ", rel_dist
-#		print "Row of kxmat: ", kxmat[100,:]
-#		print "Row of apsm: ", apsm[100,:]
-#		print "tpmat: ", tpmat
-#		print "tpcm: ", tpcm
-#		print "Individual results of matrix multiplication: "
+#		print("Distances are ", rel_dist)
+#		print("Row of kxmat: ", kxmat[100,:])
+#		print("Row of apsm: ", apsm[100,:])
+#		print("tpmat: ", tpmat)
+#		print("tpcm: ", tpcm)
+#		print("Individual results of matrix multiplication: ")
 #		summ=0
 #		for x in range(apsm.shape[1]):
 #			prod= apsm[100,x]*tpcm[x]
-#			print prod
+#			print(prod)
 #			summ+=prod
-#		print "Sum is ", summ
+#		print("Sum is ", summ)

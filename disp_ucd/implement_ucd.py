@@ -23,13 +23,15 @@ import numpy as np
 import scipy.signal as ss
 import matplotlib.pyplot as plt
 
-sys.path.append('../modules_common')
+# sys.path.append('../modules_common')
+sys.path.append(os.path.expanduser('~/code_general/modules.python'))
+# path to extraneous modules
 
 # Modules written by me
-import seisarray_data as sad
 import ucd_supplement as ucs
-import read_earth_io as reo
-import read_surf96_io as rs96
+import array_proc.seisarray_data as sad
+import SW1D_earthsr.read_earthsr_io as reo
+# import read_surf96_io as rs96
 
 # Command line arguments
 script_dir=os.getcwd()
@@ -48,7 +50,7 @@ if not os.path.exists(data_dir):
 ################################################################################
 # User input
 ################################################################################
-finput=raw_input("Enter frequency at which or frequency range in which to perform analysis: ")
+finput=input("Enter frequency at which or frequency range in which to perform analysis: ")
 #finput='0.01 0.08'
 numf=len(finput.split())
 if numf==1:
@@ -57,30 +59,30 @@ if numf==1:
 elif numf==2:
 	flow=float(finput.split()[0])
 	fhigh=float(finput.split()[1])
-	fstep=float(raw_input("Enter frequency increment: "))
+	fstep=float(input("Enter frequency increment: "))
 	freqs=np.arange(flow,fhigh+fstep,fstep)
 	#freqs=np.insert(freqs,1,0.005)        # TEMPORARY CHANGE FOR TA DATA ANALYSIS (JAN 2016)
-	print "Frequency values for analysis: ", freqs
-crange = raw_input("Phase velocity range: ")
-urange = raw_input("Group velocity range: ")
-totpick = int(raw_input("Total number of modes to pick ? "))
+	print("Frequency values for analysis: ", freqs)
+crange = input("Phase velocity range: ")
+urange = input("Group velocity range: ")
+totpick = int(input("Total number of modes to pick ? "))
 cmin = float(crange.split()[0])
 cmax=float(crange.split()[1])
 umin=float(urange.split()[0])
 umax=float(urange.split()[1])
 if fid.endswith('SAC') or fid.endswith('sac'):
 	# means the program is dealing with synthetic data
-	#usrc=raw_input("See theoretical dispersion too ? (y/n): ")
+	#usrc=input("See theoretical dispersion too ? (y/n): ")
 	usrc='y'
 	ml=0
 	mh=totpick-1
 	if usrc=='y':
-		#showmnums=raw_input("Start and end mode numbers to plot: ")
+		#showmnums=input("Start and end mode numbers to plot: ")
 		showmnums="0 5"
 		ml=int(showmnums.split()[0])
 		mh=int(showmnums.split()[1])
-		#minc=int(raw_input("Incident mode to highlight: "))
-		#thdpfile=[raw_input('File containing theoretical dispersion: ')]
+		#minc=int(input("Incident mode to highlight: "))
+		#thdpfile=[input('File containing theoretical dispersion: ')]
 		thdpfile=["../disp.bg.ray.gz"]
 		#try:
 		theor_disp = reo.read_disp(thdpfile,ml,mh)
@@ -97,9 +99,9 @@ if fid.endswith('SAC') or fid.endswith('sac'):
 else:
 	usrc=None
 synth_case=True if usrc=='y' else False
-#usrc_st=raw_input("Use all stations (y/n) ?: ")
+#usrc_st=input("Use all stations (y/n) ?: ")
 usrc_st='n'
-	
+
 ################################################################################
 # Reading the data
 ################################################################################
@@ -116,7 +118,7 @@ if usrc_st=='y':
 		tdodata=sadobj.fulldata
 	epdist=sadobj.ed
 else:
-	#st_range=raw_input("Start and end station numbers: ")
+	#st_range=input("Start and end station numbers: ")
 	st_range="17 58"
 	s1=int(st_range.split()[0])
 	s2=int(st_range.split()[1])
@@ -147,7 +149,7 @@ t=np.arange(begint,begint+(nsamp*si),si)		# time samples
 fs=np.fft.fftshift(np.fft.fftfreq(nsamp,si))		# FFT frequency samples (Hz)
 omega=2*np.pi*fs					# angular frequency (rad/s)
 xbar=np.mean(epdist)					# Mean epicentral distance of the network
-print "Number of frequency samples is: ", len(fs)
+print("Number of frequency samples is: ", len(fs))
 
 ################################################################################
 # Preliminary processing
@@ -178,14 +180,14 @@ class do_single_frequency():
 
 	def __init__(self,fhz,prevuc=None):
 
-		print "Working on frequency %f Hz" %(fhz)
+		print("Working on frequency %f Hz" %(fhz))
 		self.omega0=2*np.pi*fhz
 		self.ktrials = np.linspace(self.omega0/cmax,self.omega0/cmin,100)# trial wavenumbers for this frequency
 		par=0.9
 		alpha = (4*(math.log(10**1.5)))/((self.omega0*par)**2) 		# for a filter whose total bandwidth at 30dB is equal to its central frequency
 		self.gf=np.exp(-alpha*(omega-self.omega0)**2) 			# Gaussian filter
 		heaviside=lambda x: 0 if x < 0 else 1
-		self.H=np.array(map(heaviside,omega))
+		self.H=np.array(list(map(heaviside,omega)))
 		self.H=self.H.reshape(1,len(self.H))
 		self.gf=self.gf.reshape(1,len(self.gf))
 		#********** Mute the negative frequencies and apply the Gaussian filter on each trace ********#
@@ -201,11 +203,11 @@ class do_single_frequency():
 			self.uc_est=4.25
 		if prevuc != None and abs(self.uc_est-prevuc)>0.4*prevuc:
 			self.uc_est=prevuc
-		print "Using Uc = %f units" %(self.uc_est)
+		print("Using Uc = %f units" %(self.uc_est))
 		self.cgat=xbar/self.uc_est
 		self.main_processing()
 		self.build_ucd()
-		
+
 	def taup(self,anasig):
 
 		""" estimates the central group velocity of the multi-mode wave packet """
@@ -216,7 +218,7 @@ class do_single_frequency():
 		if begint>0:
 			bz=np.zeros((nrec,begint))
 			xtmodif=np.concatenate((bz,xtmodif),axis=1)
-		od=math.log(umin,10)		
+		od=math.log(umin,10)
 		du=10**(math.floor(od)-1)
 		uc=np.arange(umin,umax+du,du)
 		tau=np.arange(0,(nsamp+1)*si,si)
@@ -225,14 +227,14 @@ class do_single_frequency():
 		taumat=np.dot(np.ones((nrec,1)),tau)
 		tp=np.zeros((len(uc),tau.shape[1]))
 		#taumat=taumat-taumat[0][0]
-		#print "taumat is ", taumat[10,:10]
+		# print("taumat is ", taumat[10,:10])
 		offsets=epdist.reshape(len(epdist),1)
 		for l in range(len(uc)):
 			tt = taumat + np.dot(offsets/uc[l],np.ones((1,tau.shape[1])))
 			tti=np.around(tt/si)
 			tti=tti.astype(int)
 			#if l==0:
-			#	print "tt is: ", tt
+			#	print("tt is: ", tt)
 			counter=0
 			for m in range(nrec):
 				xindices=np.where(tti[m,:]<=nsamp)[0]
@@ -242,7 +244,7 @@ class do_single_frequency():
 				col=col.reshape(1,len(xindices))
 				tp[l,:]=tp[l,:] + np.concatenate((xtmodif[m,col],z),axis=1)
 				#if l==0 and m==0:
-					#print tp.shape
+					# print(tp.shape)
 				if q>0:
 					counter+=1
 			if counter>0:
@@ -253,13 +255,13 @@ class do_single_frequency():
 	def main_processing(self):
 
 		""" calculates the G(k,w) function: denoted here by wkdata """
-		
+
 		ltte=(omega-self.omega0)/self.uc_est	# Linear Term in the Taylor Expansion of k(w)
 		ltte.reshape(1,len(ltte))
 		apst=(omega*self.cgat)
-		# apst stands for Additional Phase Shift Term - this term does not appear in the 
-		# formula for G(k,w) in the paper. It is this term that produces a time shift of 
-		# xbar/uc so that the time samples in the inverse F.T. (self.tkdata) are shifted 
+		# apst stands for Additional Phase Shift Term - this term does not appear in the
+		# formula for G(k,w) in the paper. It is this term that produces a time shift of
+		# xbar/uc so that the time samples in the inverse F.T. (self.tkdata) are shifted
 		# from the original time samples in the data by the amount equal to xbar/uc
 		apst=apst.reshape(1,len(apst))
 		self.wkdata=np.zeros((len(self.ktrials),len(ltte)))
@@ -268,12 +270,12 @@ class do_single_frequency():
 			knot_term=knot_term.reshape(len(knot_term),1)
 			rest=xwdata[rec,:]*self.gf*self.H*np.exp(1j*(ltte*epdist[rec]-apst))*wn[rec]
 			self.wkdata = self.wkdata + np.dot(knot_term,rest)
-		#print np.where(self.wkdata[0,:]>0)
+		# print(np.where(self.wkdata[0,:]>0))
 
 	def build_ucd(self):
 
 		""" generates the final content of the UC diagram """
-		
+
 		self.tkdata=np.abs(np.fft.ifft(np.fft.ifftshift(self.wkdata,axes=1)))
 		mini=self.tkdata.min()
 		le=(self.tkdata-mini).max()
@@ -282,8 +284,8 @@ class do_single_frequency():
 #####################################################################################################
 
 def make_ucd_plot(frad,wavnum,toplot,ucest,showucd):
-	
-	#print "Time samples are: ", t
+
+	# print("Time samples are: ", t)
 	# ***** Calculate array response function
 	theorex=True
 	wn_mup=wn.reshape(1,len(wn))
@@ -292,14 +294,14 @@ def make_ucd_plot(frad,wavnum,toplot,ucest,showucd):
 	x_mup=epdist.reshape(1,len(epdist))
 	rk=np.sum(np.dot(np.ones((len(wavnum),1)),wn_mup)*np.exp(1j*np.dot(k_mup,x_mup)),axis=1)
 	rkdb=20*np.log10(abs(rk)/nrec)
-	#print "Shape of response function ", rk.shape
+	# print("Shape of response function ", rk.shape)
 	#ax_ucd=plt.subplot(111)
 	# for array response function plotted on right use following:
 	ax_rk=plt.subplot2grid((1,5),(0,4))
-	ax_ucd=plt.subplot2grid((1,5),(0,0),colspan=4)	
+	ax_ucd=plt.subplot2grid((1,5),(0,0),colspan=4)
 	# for array response function plotted on top use following:
 	#ax_rk=plt.subplot2grid((6,1),(0,0),rowspan=1)
-	#ax_ucd=plt.subplot2grid((6,1),(1,0),rowspan=5)	
+	#ax_ucd=plt.subplot2grid((6,1),(1,0),rowspan=5)
 	# for not plotting the array response function at all use the following:
 	#fig=plt.figure()
 	#ax_ucd=fig.add_subplot(111)
@@ -336,9 +338,9 @@ def make_ucd_plot(frad,wavnum,toplot,ucest,showucd):
 					pass
 			except IndexError:
 				theorex=False
-				print "Could not find theoretical values for frequency: ", thisf
+				print("Could not find theoretical values for frequency: ", thisf)
 				pass
-			#print "Values for mode %d are %.3f and %.3f" %(tm+ml,ctm,utm)
+			# print("Values for mode %d are %.3f and %.3f" %(tm+ml,ctm,utm))
 			if theorex:
 				utmx = xbar/utm
 				ctmy = frad/ctm
@@ -393,7 +395,7 @@ for fnum,f0 in enumerate(freqs):
 			dsfobj=do_single_frequency(f0,ucused)
 			ucused=dsfobj.uc_est
 		#currax,savenm=make_ucd_plot(dsfobj.omega0,dsfobj.ktrials,dsfobj.tkdb,dsfobj.uc_est,False)
-		print "Done. Picking modes on the UC diagram..."
+		print("Done. Picking modes on the UC diagram...")
 		peaks=ucs.get_peaks(dsfobj.tkdb,umin,umax,xbar,t,contourmin,totpick,False)
 		pv_thisf=[None for i in range(totpick)]
 		gv_thisf=[None for i in range(totpick)]
@@ -404,8 +406,8 @@ for fnum,f0 in enumerate(freqs):
 			gv_thisf[e]=mu
 		#	currax.plot(t[m[1]],dsfobj.ktrials[m[0]],'k+',ms=25,mew=2.0)
 		#plt.savefig(savenm)
-		#print pv_thisf
-		#print gv_thisf
+		# print(pv_thisf)
+		# print(gv_thisf)
 		pv_allf.append(pv_thisf)
 		gv_allf.append(gv_thisf)
 	elif len(freqs)==1:
@@ -415,10 +417,10 @@ for fnum,f0 in enumerate(freqs):
 		for pk in peaks:
 			pvel=dsfobj.omega0/dsfobj.ktrials[pk[0]]
 			gvel=xbar/t[pk[1]]
-			print "Picked phase and group velocity: ", pvel, gvel
+			print("Picked phase and group velocity: ", pvel, gvel)
 			# this is where you mark the picked values with '+' signs
 			currax.plot(t[pk[1]],dsfobj.ktrials[pk[0]],'k+',ms=25,mew=2.0)
-		plt.show()			
+		plt.show()
 if len(freqs)>1:
 	for xfig in range(2):
 		# making 2 figures - one each for phase and group velocity
@@ -442,11 +444,11 @@ if len(freqs)>1:
 			lloc=4
 		if synth_case: #and xfig==0: # TEMPORARY. PLEASE CHANGE.
 			mcol=['b','g','r','c','m','y','k','b','g','r']
-			print "Length of theor_cdisp is: ", len(theor_cdisp)
+			print("Length of theor_cdisp is: ", len(theor_cdisp))
 			solidcurve = theor_cdisp if xfig==0 else theor_udisp
-			print "Length of solidcurve is: ", len(solidcurve)
+			print("Length of solidcurve is: ", len(solidcurve))
 			for k in range(len(solidcurve)):
-				print "k is ", k
+				print("k is ", k)
 				try:
 					f = [x for x,y,z in solidcurve[k]]
 					v = [y for x,y,z in solidcurve[k]]
@@ -487,7 +489,7 @@ if len(freqs)>1:
 			#plt.setp(ltext, fontsize='small')
 		plt.savefig(data_dir+'/'+figname)
 if len(freqs)>1:
-	#usrc2=raw_input("Do you want to pickle the results ? (y/n) ")
+	#usrc2=input("Do you want to pickle the results ? (y/n) ")
 	usrc2='y'
 	if usrc2=='y':
 		ucs.make_pickle(data_dir,freqs,pv_allf,gv_allf)

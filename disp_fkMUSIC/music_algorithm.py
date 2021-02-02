@@ -4,7 +4,9 @@ import numpy as np
 import cmath as cm
 import matplotlib.pyplot as plt
 
-""" Variable names inspired from original paper - 
+##########################################################################################################################
+
+""" Variable names inspired from original paper -
     Multiple Emitter Location and Signal Parameter Estimation, IEEE transactions on Antennas and Propagation,
     Vol. AP-34, No. 3, March 1986
 
@@ -30,30 +32,29 @@ def do_single_freq(xvect,rec_locs,fhz,nsignals):
 	xvalues = [p-rec_locs[0] for p in rec_locs]
 	num_sensors = xvect.shape[0]
 	freq_samples = xvect.shape[1]
-	print "Number of receivers is: ", num_sensors
-	print "Number of frequency samples is: ", freq_samples
+	print("Number of receivers is: ", num_sensors)
+	print("Number of frequency samples is: ", freq_samples)
 	if freq_samples>1:
 		xvect = xvect - (xvect.mean(1) * np.ones((1,freq_samples)) )
 	rmat = (xvect*(xvect.H)) / freq_samples
 	umat,s,vpython = np.linalg.svd(rmat)
-	#print "First 3 singular values are: ", s[:3]
 	vmat = vpython.H
-	#print "SHAPE OF VMAT: ", vmat.shape
-	#print "NO. OF RECEIVERS: ", num_sensors
+	# print("SHAPE OF VMAT: ", vmat.shape)
+	# print("NO. OF RECEIVERS: ", num_sensors)
 	nss_vmat = vmat[:,nsignals:num_sensors]
-	""" Remember numpy's svd returns the conjugate transpose of the V matrix rather than the V matrix itself 
-	    ( svd(A) = USV.H  and python returns V.H) 
+	""" Remember numpy's svd returns the conjugate transpose of the V matrix rather than the V matrix itself
+	    ( svd(A) = USV.H  and python returns V.H)
 	    nss_vmat below stands for noise subspace v matrix """
-	print "Shape of noise-subspace eigenvector matrix is: ", nss_vmat.shape
+	print("Shape of noise-subspace eigenvector matrix is: ", nss_vmat.shape)
 	approx_rinv = nss_vmat*(nss_vmat.H)
-	print "Shape of approximate R-inverse matrix is: ", approx_rinv.shape
-	print "Length of kvalues:", kvalues.size
+	print("Shape of approximate R-inverse matrix is: ", approx_rinv.shape)
+	print("Length of kvalues:", kvalues.size)
 	for j,k in enumerate(kvalues):
 		steer = np.matrix([ cm.rect(1,-k*x) for x in xvalues ]).T
 		denom = steer.H * approx_rinv * steer
 		quad_form = denom[0,0]
-		#print final.shape, final, final[0,0], type(final)
+		# print(final.shape, final, final[0,0], type(final))
 		power_mus[j] = abs(1 / quad_form)
-	#print "Min and max of power_mus: ", min(power_mus), max(power_mus)
+	# print("Min and max of power_mus: ", min(power_mus), max(power_mus))
 	power_mus=power_mus/(max(power_mus))
 	return kvalues, power_mus

@@ -1,2 +1,4 @@
-disp_ucd/olducd_combine_pickles.py
+disp_ucd/__pycache__
+disp_fkMUSIC/__pycache__
+disp_ParkMethod/__pycache__
 disp_fkMUSIC/runmusic.sh
