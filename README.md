@@ -1,18 +1,23 @@
 <<<<<<< HEAD
 # dispersion_codes
-Code accompanying Datta 2017: "A review of array based methods for measurement of multimode surface wave phase velocity dispersion"
+Code accompanying Datta (2019):
+
+Datta, A (2019). On the application of the fk-MUSIC method to measurement of multimode surface wave phase velocity dispersion from receiver arrays. Journal of Seismology, 23(2), 243-260.
 
 Refer to the above for any abbreviations/acronyms used in this README.
 
-This package consists of three main programs, implementing the three methods discussed in Datta 2017:
+This package consists of three main programs, implementing the three methods discussed in Datta (2019):
 
 1. disp_ParkMethod/implement_park.py: implements the frequency-domain slant stack technique.
 2. disp_fkMUSIC/implement_MUSIC.py: implements the fk-MUSIC technique.
 3. disp_ucd/implement_ucd.py: implements the UC-diagram technique.
 
-Modules which are used by all or some of these programs are in the directory "modules_common".
+The programs rely on some extraneous modules, which are available as separate repositories:
+https://github.com/arjundatta23/array_proc
+https://github.com/arjundatta23/signal_proc
+https://github.com/arjundatta23/SW1D_earthsr
 
-Apart from these three main programs, this package consists of a few supplementary programs or scripts which perform ancillary functions related to storage or presentation of results. These supplementary programs are described in sepaate README files within the "disp_ucd" and "disp_fkMUSIC" directories.
+Apart from the three main programs, this package consists of a few supplementary programs or scripts which perform ancillary functions related to storage or presentation of results. These supplementary programs are described in sepaate README files within the "disp_ucd" and "disp_fkMUSIC" directories.
 
 This parent README discusses only the three main programs.
 
@@ -51,12 +56,3 @@ NB: this code is meant to be used with data from roughly linear arrays of statio
 III. USER CONTROLS IN THE SOURCE CODE
 
 windowing etc.
-
-
-=======
-# disp_codes
-This is a collection of Python programs corresponding to:
-
-Datta, A. (2019). On the application of the fk-MUSIC method to measurement of multimode surface wave phase velocity dispersion
-from receiver arrays, Journal of Seismology, 23(2), 243-260, https://doi.org/10.1007/s10950-018-9803-4
->>>>>>> d920ae7cc15fb74af06067f8c72f7c47875bac9f
